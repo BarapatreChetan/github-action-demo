@@ -11,5 +11,17 @@ jobs:
         steps:
         - name: Checkout Code
           uses: actions/checkout@v2
-        - name: Show Message
-          run: echo 'welcome to github actions'
+        - name: Build and Push Docker Image
+          run:  |
+            docker build -t myimage1 .
+            docker tag myimage1 chetanbarapatre/myimage1
+            echo "${{secrets.DOCKERHUB_PASSWORD}}" | docker login -u "${{secrets.DOCKERHUB_USERNAME}}" --password-stdin
+            docker push chetanbarapatre/myimage1
+        - name: Setup SSH key
+          run: | 
+            echo "${{secrets.EC2_PRIVATE_KEY}}" >  /temp/ssh_ley
+            chmod 600 /temp/ssh_key
+        - name: Connect to End user
+          run: |
+            ssh -o "StrictHostKeyChecking=no"  -i /temp/ssh_key ubuntu@emd_user_machine_ip
+            kubectl apply -f /home/ubuntu/my-deployment.yml
